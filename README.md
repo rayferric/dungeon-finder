@@ -38,7 +38,7 @@ cd dungeon-finder
 ./gradlew shadowJar
 ```
 
-The standalone output binary will be written to the `./build/libs/` directory.
+A standalone output binary will be written to the `./build/libs/` directory.
 
 You can use these to acquire the binary and libraries separately:
 

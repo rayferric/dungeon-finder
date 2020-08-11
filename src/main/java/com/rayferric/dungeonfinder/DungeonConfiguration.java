@@ -92,7 +92,7 @@ public class DungeonConfiguration {
                 else if(config.dungeons.size() > candidate.dungeons.size())
                     candidate = config;
         }
-        return null;
+        return candidate;
     }
 
     /**

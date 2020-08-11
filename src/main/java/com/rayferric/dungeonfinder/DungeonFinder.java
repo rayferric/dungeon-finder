@@ -16,9 +16,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 @SuppressWarnings("BusyWait")
 public class DungeonFinder {
     public static List<DungeonConfiguration> run(String worldFolderPath, int minX, int maxX, int minZ, int maxZ, int minConfigSize, int numThreads, int reportDelay) throws IOException, InterruptedException {
-        ConcurrentRTree<Point3d> dungeonTree = (ConcurrentRTree<Point3d>) SpatialSearches.lockingRTree(new Point3d.Builder());
+        ConcurrentRTree<Point3d> dungeonTree = (ConcurrentRTree<Point3d>)SpatialSearches.lockingRTree(new Point3d.Builder());
 
-        ThreadPoolExecutor threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
+        ThreadPoolExecutor threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numThreads);
 
         File worldFolder = new File(worldFolderPath);
         MinecraftWorld world = new MinecraftWorld(worldFolder);
@@ -76,8 +76,8 @@ public class DungeonFinder {
 
             if(dungeons.size() >= minConfigSize) {
                 DungeonConfiguration conf = new DungeonConfiguration(dungeons);
-                DungeonConfiguration validConf = conf.getFirstValidSubdivision(minConfigSize);
-                if(validConf != null && !dungeonConfigs.contains(validConf))dungeonConfigs.add(validConf);
+                conf = conf.getFirstValidSubdivision(minConfigSize);
+                if(conf != null && !dungeonConfigs.contains(conf))dungeonConfigs.add(conf);
             }
         });
 

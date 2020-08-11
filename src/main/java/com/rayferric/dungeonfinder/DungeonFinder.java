@@ -22,8 +22,8 @@ public class DungeonFinder {
         void execute();
     }
 
-    public interface Callback1<A> {
-        void execute(A a);
+    public interface Callback2<A, B> {
+        void execute(A a, B b);
     }
 
     public interface Callback3<A, B, C> {
@@ -43,11 +43,12 @@ public class DungeonFinder {
     /**
      * Defines a callback to fire after the region files are read and before the proximity filtering begins<br>
      * • int – the number of dungeons that have been found<br>
+     * • long – time elapsed in milliseconds<br>
      * This lambda is called from the same thread that invoked run(...)
      *
-     * @param filterCallback    single-parameter callback
+     * @param filterCallback    two-parameter callback
      */
-    public void onFilter(Callback1<Integer> filterCallback) {
+    public void onFilter(Callback2<Integer, Long> filterCallback) {
         this.filterCallback = filterCallback;
     }
 
@@ -97,9 +98,9 @@ public class DungeonFinder {
             }
         }
 
+        long time = System.currentTimeMillis();
         monitorThreadPool(threadPool, reportDelay);
-
-        if(filterCallback != null)filterCallback.execute(dungeonTree.getEntryCount());
+        if(filterCallback != null)filterCallback.execute(dungeonTree.getEntryCount(), System.currentTimeMillis() - time);
 
         List<DungeonConfiguration> dungeonConfigs = new ArrayList<>();
         Semaphore dungeonConfigsSemaphore = new Semaphore(1);
@@ -119,7 +120,7 @@ public class DungeonFinder {
     }
 
     private Callback startCallback = null;
-    private Callback1<Integer> filterCallback = null;
+    private Callback2<Integer, Long> filterCallback = null;
     private Callback3<Long, Long, Long> reportCallback = null;
 
     private void monitorThreadPool(ThreadPoolExecutor threadPool, int reportDelay) {

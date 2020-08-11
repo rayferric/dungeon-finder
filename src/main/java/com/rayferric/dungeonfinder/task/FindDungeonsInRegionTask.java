@@ -1,14 +1,14 @@
-package com.rayferric.dungeonfinder;
+package com.rayferric.dungeonfinder.task;
 
 import com.conversantmedia.util.collection.geometry.Point3d;
 import com.conversantmedia.util.collection.spatial.ConcurrentRTree;
-import com.conversantmedia.util.collection.spatial.SpatialSearch;
+import com.rayferric.dungeonfinder.util.BlockID;
 import io.xol.enklume.MinecraftChunk;
 import io.xol.enklume.MinecraftRegion;
 import io.xol.enklume.MinecraftWorld;
 
 public class FindDungeonsInRegionTask implements Runnable {
-    FindDungeonsInRegionTask(int regionX, int regionZ, MinecraftWorld world, ConcurrentRTree<Point3d> dungeonTree) {
+    public FindDungeonsInRegionTask(int regionX, int regionZ, MinecraftWorld world, ConcurrentRTree<Point3d> dungeonTree) {
         this.regionX = regionX;
         this.regionZ = regionZ;
         this.world = world;
@@ -45,7 +45,7 @@ public class FindDungeonsInRegionTask implements Runnable {
         region.close();
     }
 
-    private int regionX, regionZ;
-    private MinecraftWorld world;
-    private ConcurrentRTree<Point3d> dungeonTree;
+    private final int regionX, regionZ;
+    private final MinecraftWorld world;
+    private final ConcurrentRTree<Point3d> dungeonTree;
 }

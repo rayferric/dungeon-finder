@@ -1,5 +1,8 @@
-package com.rayferric.dungeonfinder;
+package com.rayferric.dungeonfinder.cli;
 
+import com.rayferric.dungeonfinder.DungeonConfiguration;
+import com.rayferric.dungeonfinder.DungeonFinder;
+import com.rayferric.dungeonfinder.util.BlockPos;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -9,7 +12,7 @@ public class DungeonFinderCLI {
     public static void main(String[] args) {
         Options options = new Options();
 
-        Option worldDirectoryOption = new Option("w", "world-directory", true, "input world directory");
+        Option worldDirectoryOption = new Option("w", "world-directory", true, "path to the input world's directory");
         Option minXOption = new Option(null, "min-x", true, "most negative region's X position");
         Option maxXOption = new Option(null, "max-x", true, "most positive region's X position");
         Option minZOption = new Option(null, "min-z", true, "most negative region's Z position");
@@ -45,7 +48,7 @@ public class DungeonFinderCLI {
             System.exit(1);
         }
 
-        String worldFolderPath = cmd.getOptionValue("world-directory");
+        String worldDirectory = cmd.getOptionValue("world-directory");
         int minX = Integer.parseInt(cmd.getOptionValue("min-x"));
         int maxX = Integer.parseInt(cmd.getOptionValue("max-x"));
         int minZ = Integer.parseInt(cmd.getOptionValue("min-z"));
@@ -54,15 +57,32 @@ public class DungeonFinderCLI {
         int numThreads = cmd.hasOption("num-threads") ? Integer.parseInt(cmd.getOptionValue("num-threads")) : 4;
         int reportDelay = cmd.hasOption("report-delay") ? Integer.parseInt(cmd.getOptionValue("report-delay")) : 10000;
 
+        DungeonFinder dungeonFinder = new DungeonFinder();
+        dungeonFinder.onStart(() -> {
+            System.out.println(String.format("Processing %d regions...", (maxX - minX + 1) * (maxZ - minZ + 1)));
+            System.out.flush();
+        });
+        dungeonFinder.onFilter(numFound -> {
+            System.out.println(String.format("Found %d dungeons.\nStarted proximity filtering...", numFound));
+            System.out.flush();
+        });
+        dungeonFinder.onReport((numComplete, numTotal, timeElapsed) -> {
+            double timeRemaining = 0;
+            if(numComplete != 0)
+                timeRemaining = (double)(timeElapsed * numTotal / numComplete - timeElapsed) / 1000.0;
+            String remainingTimeStr = numComplete == 0 ? "?" : Long.toString((long)timeRemaining);
+
+            double progress = (double)numComplete / numTotal * 100.0;
+
+            System.out.println(String.format("%d %% - ETA %s s", (long)progress, remainingTimeStr));
+            System.out.flush();
+        });
+
         List<DungeonConfiguration> dungeonConfigs = null;
         try {
-            dungeonConfigs = DungeonFinder.run(worldFolderPath, minX, maxX, minZ, maxZ, minConfigSize, numThreads, reportDelay);
+            dungeonConfigs = dungeonFinder.run(worldDirectory, minX, maxX, minZ, maxZ, minConfigSize, numThreads, reportDelay);
         } catch(IOException e) {
             System.err.println("Failed to open world directory.");
-            e.printStackTrace();
-            System.exit(1);
-        } catch(InterruptedException e) {
-            System.err.println("Worker thread has been interrupted.");
             e.printStackTrace();
             System.exit(1);
         }

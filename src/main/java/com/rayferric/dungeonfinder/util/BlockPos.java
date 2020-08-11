@@ -1,4 +1,4 @@
-package com.rayferric.dungeonfinder;
+package com.rayferric.dungeonfinder.util;
 
 import com.conversantmedia.util.collection.geometry.Point3d;
 

@@ -1,9 +1,10 @@
 package com.rayferric.dungeonfinder;
 
 import com.conversantmedia.util.collection.geometry.Point3d;
-import com.conversantmedia.util.collection.geometry.Rect3d;
 import com.conversantmedia.util.collection.spatial.ConcurrentRTree;
 import com.conversantmedia.util.collection.spatial.SpatialSearches;
+import com.rayferric.dungeonfinder.task.FilterProximityTask;
+import com.rayferric.dungeonfinder.task.FindDungeonsInRegionTask;
 import io.xol.enklume.MinecraftWorld;
 
 import java.io.File;
@@ -11,20 +12,84 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("BusyWait")
 public class DungeonFinder {
-    public static List<DungeonConfiguration> run(String worldFolderPath, int minX, int maxX, int minZ, int maxZ, int minConfigSize, int numThreads, int reportDelay) throws IOException, InterruptedException {
+    public interface Callback {
+        void execute();
+    }
+
+    public interface Callback1<A> {
+        void execute(A a);
+    }
+
+    public interface Callback3<A, B, C> {
+        void execute(A a, B b, C c);
+    }
+
+    /**
+     * Defines a callback to fire at the beginning, after the world directory has been opened<br>
+     * This lambda is called from the same thread that invoked run(...)<br>
+     *
+     * @param startCallback    parameter-less callback
+     */
+    public void onStart(Callback startCallback) {
+        this.startCallback = startCallback;
+    }
+
+    /**
+     * Defines a callback to fire after the region files are read and before the proximity filtering begins<br>
+     * • int – the number of dungeons that have been found<br>
+     * This lambda is called from the same thread that invoked run(...)
+     *
+     * @param filterCallback    single-parameter callback
+     */
+    public void onFilter(Callback1<Integer> filterCallback) {
+        this.filterCallback = filterCallback;
+    }
+
+    /**
+     * Defines a callback to fire every time the object reports its current state of computation<br>
+     * • long – items complete<br>
+     * • long – items total<br>
+     * • long – time elapsed in milliseconds<br>
+     * This lambda is called from the same thread that invoked run(...)
+     *
+     * @param reportCallback    three-parameter callback
+     */
+    public void onReport(Callback3<Long, Long, Long> reportCallback) {
+        this.reportCallback = reportCallback;
+    }
+
+    /**
+     * Finds multi-dungeon configurations in a Minecraft world save<br>
+     * The algorithm first searches the world for dungeons<br>
+     * Then the proximity filtering stage begins – all the configurations that do not meet the requirements are discarded<br>
+     * Both stages are multithreaded
+     *
+     * @param worldDirectory    path to the input world's directory
+     * @param minX              most negative region's X position
+     * @param maxX              most positive region's X position
+     * @param minZ              most negative region's Z position
+     * @param maxZ              most positive region's Z position
+     * @param minConfigSize     minimum number of spawners per dungeon configuration
+     * @param numThreads        number of threads used to process regions
+     * @param reportDelay       delay between individual progress reports in milliseconds
+     *
+     * @return    list of dungeon configurations that were found
+     */
+    public List<DungeonConfiguration> run(String worldDirectory, int minX, int maxX, int minZ, int maxZ, int minConfigSize, int numThreads, int reportDelay) throws IOException {
         ConcurrentRTree<Point3d> dungeonTree = (ConcurrentRTree<Point3d>)SpatialSearches.lockingRTree(new Point3d.Builder());
 
         ThreadPoolExecutor threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numThreads);
 
-        File worldFolder = new File(worldFolderPath);
+        File worldFolder = new File(worldDirectory);
         MinecraftWorld world = new MinecraftWorld(worldFolder);
 
-        System.out.println(String.format("Processing %d regions...", (maxX - minX + 1) * (maxZ - minZ + 1)));
-        System.out.flush();
+        if(startCallback != null)startCallback.execute();
 
         for(int regionX = minX; regionX <= maxX; regionX++) {
             for(int regionZ = minZ; regionZ <= maxZ; regionZ++) {
@@ -32,55 +97,49 @@ public class DungeonFinder {
             }
         }
 
-        long numTotal = threadPool.getTaskCount(), numComplete;
-        long elapsedTime = reportDelay;
-        Thread.sleep(reportDelay);
-        while((numComplete = threadPool.getCompletedTaskCount()) != numTotal) {
-            double remainingTime = 0;
-            if(numComplete != 0)
-                remainingTime = (double)(elapsedTime * numTotal / numComplete - elapsedTime) / 1000.0;
-            String remainingTimeStr = numComplete == 0 ? "?" : Long.toString((long)remainingTime);
+        monitorThreadPool(threadPool, reportDelay);
 
-            double progress = (double)numComplete / numTotal * 100.0;
-            System.out.println(String.format("%d %% - ETA %s s", (long)progress, remainingTimeStr));
-            System.out.flush();
-            Thread.sleep(reportDelay);
-            elapsedTime += reportDelay;
-        }
-        threadPool.shutdownNow();
-
-        System.out.println(String.format("Found %d dungeons.\nStarted proximity filtering...", dungeonTree.getEntryCount()));
-        System.out.flush();
+        if(filterCallback != null)filterCallback.execute(dungeonTree.getEntryCount());
 
         List<DungeonConfiguration> dungeonConfigs = new ArrayList<>();
+        Semaphore dungeonConfigsSemaphore = new Semaphore(1);
+        dungeonTree.forEach(point -> threadPool.execute(new FilterProximityTask(point, dungeonTree, dungeonConfigs, dungeonConfigsSemaphore, minConfigSize)));
 
-        dungeonTree.forEach(point -> {
-            double x = point.getCoord(0);
-            double y = point.getCoord(1);
-            double z = point.getCoord(2);
-
-            double maxDist2 = 32.0; // 2 * 16
-
-            Rect3d rect = new Rect3d(x - maxDist2, y - maxDist2, z - maxDist2, x + maxDist2, y + maxDist2, z + maxDist2);
-
-            List<BlockPos> dungeons = new ArrayList<>();
-            dungeons.add(new BlockPos(x, y, z));
-            dungeonTree.search(rect, testPoint -> {
-                if(testPoint == point)return;
-                BlockPos testDungeonPos = new BlockPos(testPoint);
-                for(BlockPos dungeonPos : dungeons) {
-                    if(dungeonPos.distance(testDungeonPos) > maxDist2)return;
-                }
-                dungeons.add(testDungeonPos);
-            });
-
-            if(dungeons.size() >= minConfigSize) {
-                DungeonConfiguration conf = new DungeonConfiguration(dungeons);
-                conf = conf.getFirstValidSubdivision(minConfigSize);
-                if(conf != null && !dungeonConfigs.contains(conf))dungeonConfigs.add(conf);
-            }
-        });
+        // This process doesn't take that long, so drop monitoring in favor of just waiting
+        //monitorThreadPool(threadPool, reportDelay);
+        threadPool.shutdown();
+        try {
+            threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
         return dungeonConfigs;
+    }
+
+    private Callback startCallback = null;
+    private Callback1<Integer> filterCallback = null;
+    private Callback3<Long, Long, Long> reportCallback = null;
+
+    private void monitorThreadPool(ThreadPoolExecutor threadPool, int reportDelay) {
+        long numTotal = threadPool.getTaskCount(), numComplete;
+        long timeElapsed = reportDelay;
+
+        try {
+            Thread.sleep(reportDelay);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+        while((numComplete = threadPool.getCompletedTaskCount()) != numTotal) {
+            if(reportCallback != null)reportCallback.execute(numComplete, numTotal, timeElapsed);
+
+            try {
+                Thread.sleep(reportDelay);
+            } catch(InterruptedException e) {
+                e.printStackTrace();
+            }
+            timeElapsed += reportDelay;
+        }
     }
 }

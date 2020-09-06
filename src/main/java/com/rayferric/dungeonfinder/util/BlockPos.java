@@ -35,8 +35,8 @@ public class BlockPos implements Comparable<BlockPos> {
 
     @Override
     public boolean equals(Object obj) {
-        if(this == obj)return true;
-        if(obj == null || getClass() != obj.getClass())return false;
+        if(this == obj) return true;
+        if(obj == null || getClass() != obj.getClass()) return false;
         BlockPos other = (BlockPos)obj;
         return x == other.x && y == other.y && z == other.z;
     }

@@ -8,7 +8,8 @@ import io.xol.enklume.MinecraftRegion;
 import io.xol.enklume.MinecraftWorld;
 
 public class FindDungeonsInRegionTask implements Runnable {
-    public FindDungeonsInRegionTask(int regionX, int regionZ, MinecraftWorld world, ConcurrentRTree<Point3d> dungeonTree) {
+    public FindDungeonsInRegionTask(int regionX, int regionZ, MinecraftWorld world,
+                                    ConcurrentRTree<Point3d> dungeonTree) {
         this.regionX = regionX;
         this.regionZ = regionZ;
         this.world = world;
@@ -18,7 +19,7 @@ public class FindDungeonsInRegionTask implements Runnable {
     @Override
     public void run() {
         MinecraftRegion region = world.getRegion(regionX, regionZ);
-        if(region == null)return;
+        if(region == null) return;
 
         for(int chunkX = 0; chunkX < 32; chunkX++) {
             for(int chunkZ = 0; chunkZ < 32; chunkZ++) {

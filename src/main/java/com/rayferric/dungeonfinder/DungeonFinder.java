@@ -12,9 +12,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @SuppressWarnings("BusyWait")
 public class DungeonFinder {
@@ -34,7 +35,7 @@ public class DungeonFinder {
      * Defines a callback to fire at the beginning, after the world directory has been opened<br>
      * This lambda is called from the same thread that invoked run(...)<br>
      *
-     * @param startCallback    parameter-less callback
+     * @param startCallback parameter-less callback
      */
     public void onStart(Callback startCallback) {
         this.startCallback = startCallback;
@@ -46,7 +47,7 @@ public class DungeonFinder {
      * • long – time elapsed in milliseconds<br>
      * This lambda is called from the same thread that invoked run(...)
      *
-     * @param filterCallback    two-parameter callback
+     * @param filterCallback two-parameter callback
      */
     public void onFilter(Callback2<Integer, Long> filterCallback) {
         this.filterCallback = filterCallback;
@@ -59,7 +60,7 @@ public class DungeonFinder {
      * • long – time elapsed in milliseconds<br>
      * This lambda is called from the same thread that invoked run(...)
      *
-     * @param reportCallback    three-parameter callback
+     * @param reportCallback three-parameter callback
      */
     public void onReport(Callback3<Long, Long, Long> reportCallback) {
         this.reportCallback = reportCallback;
@@ -71,26 +72,29 @@ public class DungeonFinder {
      * Then the proximity filtering stage begins – all the configurations that do not meet the requirements are discarded<br>
      * Both stages are multithreaded
      *
-     * @param worldDirectory    path to the input world's directory
-     * @param minX              most negative region's X position
-     * @param maxX              most positive region's X position
-     * @param minZ              most negative region's Z position
-     * @param maxZ              most positive region's Z position
-     * @param minConfigSize     minimum number of spawners per dungeon configuration
-     * @param numThreads        number of threads used to process regions
-     * @param reportDelay       delay between individual progress reports in milliseconds
-     *
-     * @return    list of dungeon configurations that were found
+     * @param worldDirectory path to the input world's directory
+     * @param minX           most negative region's X position
+     * @param maxX           most positive region's X position
+     * @param minZ           most negative region's Z position
+     * @param maxZ           most positive region's Z position
+     * @param minConfigSize  minimum number of spawners per dungeon configuration
+     * @param maxDist        maximum distance from center of configuration to a single spawner
+     * @param numThreads     number of threads used to process regions
+     * @param reportDelay    delay between individual progress reports in milliseconds
+     * @return list of dungeon configurations that were found
      */
-    public List<DungeonConfiguration> run(String worldDirectory, int minX, int maxX, int minZ, int maxZ, int minConfigSize, int numThreads, int reportDelay) throws IOException {
-        ConcurrentRTree<Point3d> dungeonTree = (ConcurrentRTree<Point3d>)SpatialSearches.lockingRTree(new Point3d.Builder());
+    public List<DungeonConfiguration> run(String worldDirectory, int minX, int maxX, int minZ, int maxZ,
+                                          int minConfigSize, int maxDist, int numThreads, int reportDelay)
+            throws IOException {
+        ConcurrentRTree<Point3d> dungeonTree =
+                (ConcurrentRTree<Point3d>)SpatialSearches.lockingRTree(new Point3d.Builder());
 
         ThreadPoolExecutor threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numThreads);
 
         File worldFolder = new File(worldDirectory);
         MinecraftWorld world = new MinecraftWorld(worldFolder);
 
-        if(startCallback != null)startCallback.execute();
+        if(startCallback != null) startCallback.execute();
 
         for(int regionX = minX; regionX <= maxX; regionX++) {
             for(int regionZ = minZ; regionZ <= maxZ; regionZ++) {
@@ -100,14 +104,17 @@ public class DungeonFinder {
 
         long time = System.currentTimeMillis();
         monitorThreadPool(threadPool, reportDelay);
-        if(filterCallback != null)filterCallback.execute(dungeonTree.getEntryCount(), System.currentTimeMillis() - time);
+        if(filterCallback != null)
+            filterCallback.execute(dungeonTree.getEntryCount(), System.currentTimeMillis() - time);
 
         List<DungeonConfiguration> dungeonConfigs = new ArrayList<>();
-        Semaphore dungeonConfigsSemaphore = new Semaphore(1);
-        dungeonTree.forEach(point -> threadPool.execute(new FilterProximityTask(point, dungeonTree, dungeonConfigs, dungeonConfigsSemaphore, minConfigSize)));
+        Lock dungeonConfigsLock = new ReentrantLock();
+        dungeonTree.forEach(point -> threadPool.execute(
+                new FilterProximityTask(point, dungeonTree, dungeonConfigs, dungeonConfigsLock, minConfigSize,
+                        maxDist)));
 
         // This process doesn't take that long, so drop monitoring in favor of just waiting
-        //monitorThreadPool(threadPool, reportDelay);
+        // monitorThreadPool(threadPool, reportDelay);
         threadPool.shutdown();
         try {
             threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
@@ -133,7 +140,7 @@ public class DungeonFinder {
             e.printStackTrace();
         }
         while((numComplete = threadPool.getCompletedTaskCount()) != numTotal) {
-            if(reportCallback != null)reportCallback.execute(numComplete, numTotal, timeElapsed);
+            if(reportCallback != null) reportCallback.execute(numComplete, numTotal, timeElapsed);
 
             try {
                 Thread.sleep(reportDelay);

@@ -11,6 +11,7 @@
 
 ### Find Dungeon Configurations of Any Size
 
+- 📐 Welzl's Algorithm Integration
 - 💻 Multithreading Support
 - ⚙️ Custom Region Ranges
 
@@ -25,7 +26,7 @@
 ### Prerequisites
 
 - 🔗 **[Git](https://git-scm.com)** Version Control System
-- ☕ Latest Version of **[Java SE Development Kit](https://www.oracle.com/java/technologies/javase-downloads.html)**
+- ☕ **[Java SE Development Kit 14](https://www.azul.com/downloads/zulu-community/?version=java-14&package=jdk)**
 - 🌏 A **[Pregenerated](https://www.curseforge.com/minecraft/mc-mods/chunkpregenerator)** Minecraft World
 
 ### Building

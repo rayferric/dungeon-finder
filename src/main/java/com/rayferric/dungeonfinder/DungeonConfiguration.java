@@ -1,31 +1,30 @@
 package com.rayferric.dungeonfinder;
 
-import com.rayferric.dungeonfinder.util.BlockPos;
+import com.conversantmedia.util.collection.geometry.Point3d;
 import com.rayferric.math.common.Vector3f;
 import com.rayferric.math.welzl.Sphere;
 import com.rayferric.math.welzl.Welzl;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class DungeonConfiguration {
-    public DungeonConfiguration(List<BlockPos> dungeons, int maxDist) {
-        this.dungeons = dungeons;
+    public DungeonConfiguration(@NotNull List<Spawner> spawners, int maxDist) {
+        this.spawners = spawners;
         this.maxDist = maxDist;
 
         // We must sort the array, so two differently ordered configurations will remain equal
-        Collections.sort(this.dungeons);
+        spawners.sort(Comparator.comparingInt(Spawner::hashCode));
 
-        List<Vector3f> points = new ArrayList<>(dungeons.size());
-        for(BlockPos pos : dungeons) {
-            points.add(new Vector3f(pos.getX(), pos.getY(), pos.getZ()));
+        List<Vector3f> points = new ArrayList<>(spawners.size());
+        for(Spawner spawner : spawners) {
+            Point3d pos = spawner.getPos();
+            points.add(new Vector3f(pos.getCoord(0), pos.getCoord(1), pos.getCoord(2)));
         }
         Sphere boundingSphere = Welzl.run(points);
         Vector3f origin = boundingSphere.getOrigin();
 
-        center = new BlockPos(origin.getX(), origin.getY(), origin.getZ());
+        center = new Point3d(origin.getX(), origin.getY(), origin.getZ());
         valid = (boundingSphere.getRadius() <= maxDist);
     }
 
@@ -34,17 +33,12 @@ public class DungeonConfiguration {
         if(this == o) return true;
         if(o == null || getClass() != o.getClass()) return false;
         DungeonConfiguration other = (DungeonConfiguration)o;
-        return Objects.equals(dungeons, other.dungeons);
+        return Objects.equals(spawners, other.spawners);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(dungeons);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("DungeonConfiguration{dungeons=%s}", dungeons);
+        return Objects.hash(spawners);
     }
 
     /**
@@ -55,13 +49,13 @@ public class DungeonConfiguration {
     public List<DungeonConfiguration> subdivide() {
         List<DungeonConfiguration> subConfigs = new ArrayList<>(2);
 
-        List<BlockPos> newDungeons = new ArrayList<>(dungeons);
-        newDungeons.remove(newDungeons.size() - 1);
-        subConfigs.add(new DungeonConfiguration(newDungeons, maxDist));
+        List<Spawner> newSpawners = new ArrayList<>(spawners);
+        newSpawners.remove(newSpawners.size() - 1);
+        subConfigs.add(new DungeonConfiguration(newSpawners, maxDist));
 
-        newDungeons = new ArrayList<>(dungeons);
-        newDungeons.remove(0);
-        subConfigs.add(new DungeonConfiguration(newDungeons, maxDist));
+        newSpawners = new ArrayList<>(spawners);
+        newSpawners.remove(0);
+        subConfigs.add(new DungeonConfiguration(newSpawners, maxDist));
 
         return subConfigs;
     }
@@ -76,7 +70,7 @@ public class DungeonConfiguration {
     public DungeonConfiguration getOptimalValidSubdivision(int minDungeons) {
         if(valid)
             return this;
-        if(dungeons.size() <= minDungeons)
+        if(spawners.size() <= minDungeons)
             return null;
 
         List<DungeonConfiguration> subConfigs = subdivide();
@@ -86,7 +80,7 @@ public class DungeonConfiguration {
             DungeonConfiguration config = subConfig.getOptimalValidSubdivision(minDungeons);
             if(config == null) continue;
 
-            if(candidate == null || config.dungeons.size() > candidate.dungeons.size())
+            if(candidate == null || config.spawners.size() > candidate.spawners.size())
                 candidate = config;
         }
         return candidate;
@@ -97,8 +91,8 @@ public class DungeonConfiguration {
      *
      * @return list of spawner positions
      */
-    public List<BlockPos> getDungeons() {
-        return dungeons;
+    public List<Spawner> getSpawners() {
+        return spawners;
     }
 
     /**
@@ -106,7 +100,7 @@ public class DungeonConfiguration {
      *
      * @return center of the configuration
      */
-    public BlockPos getCenter() {
+    public Point3d getCenter() {
         return center;
     }
 
@@ -119,8 +113,8 @@ public class DungeonConfiguration {
         return valid;
     }
 
-    private final List<BlockPos> dungeons;
+    private final List<Spawner> spawners;
     private final int maxDist;
-    private final BlockPos center;
+    private final Point3d center;
     private final boolean valid;
 }

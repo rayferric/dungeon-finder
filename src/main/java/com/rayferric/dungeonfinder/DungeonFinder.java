@@ -86,8 +86,8 @@ public class DungeonFinder {
     public List<DungeonConfiguration> run(String worldDirectory, int minX, int maxX, int minZ, int maxZ,
                                           int minConfigSize, int maxDist, int numThreads, int reportDelay)
             throws IOException {
-        ConcurrentRTree<Point3d> dungeonTree =
-                (ConcurrentRTree<Point3d>)SpatialSearches.lockingRTree(new Point3d.Builder());
+        ConcurrentRTree<Spawner> dungeonTree =
+                (ConcurrentRTree<Spawner>)SpatialSearches.lockingRTree(new Spawner.Builder());
 
         ThreadPoolExecutor threadPool = (ThreadPoolExecutor)Executors.newFixedThreadPool(numThreads);
 
@@ -109,8 +109,8 @@ public class DungeonFinder {
 
         List<DungeonConfiguration> dungeonConfigs = new ArrayList<>();
         Lock dungeonConfigsLock = new ReentrantLock();
-        dungeonTree.forEach(point -> threadPool.execute(
-                new FilterProximityTask(point, dungeonTree, dungeonConfigs, dungeonConfigsLock, minConfigSize,
+        dungeonTree.forEach(spawner -> threadPool.execute(
+                new FilterProximityTask(spawner, dungeonTree, dungeonConfigs, dungeonConfigsLock, minConfigSize,
                         maxDist)));
 
         // This process doesn't take that long, so drop monitoring in favor of just waiting

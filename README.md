@@ -54,21 +54,25 @@ Any required libraries will be copied to `./lib/`.
 ### Running
 
 Find three-spawner configurations in a 16384x16384 area around (0, 0):
+
 ```bash
 java -jar dungeon-finder-{version}-all.jar -w="{save-directory}" --min-x=-16 --min-z=-16 --max-x=15 --max-z=15
 ```
 
 Find double-dungeon XP farms in a 2048x2048 region:
+
 ```bash
 java -jar dungeon-finder-{version}-all.jar -w="{save-directory}" --min-x=-2 --min-z=-2 --max-x=1 --max-z=1 -c=2
 ```
 
 List all spawners in a 1024x1024 square:
+
 ```bash
 java -jar dungeon-finder-{version}-all.jar -w="{save-directory}" --min-x=-1 --min-z=-1 --max-x=0 --max-z=0 -c=1
 ```
 
 Example output:
+
 ```bash
 Processing 16 regions on 8 threads...
 Found 151 dungeons. (10 s)

@@ -2,18 +2,21 @@ package com.rayferric.dungeonfinder.task;
 
 import com.conversantmedia.util.collection.geometry.Point3d;
 import com.conversantmedia.util.collection.spatial.ConcurrentRTree;
+import com.rayferric.dungeonfinder.Spawner;
 import com.rayferric.dungeonfinder.util.BlockID;
+import com.rayferric.dungeonfinder.util.MobType;
 import io.xol.enklume.MinecraftChunk;
 import io.xol.enklume.MinecraftRegion;
 import io.xol.enklume.MinecraftWorld;
+import io.xol.enklume.nbt.*;
+import org.jetbrains.annotations.NotNull;
 
 public class FindDungeonsInRegionTask implements Runnable {
-    public FindDungeonsInRegionTask(int regionX, int regionZ, MinecraftWorld world,
-                                    ConcurrentRTree<Point3d> dungeonTree) {
+    public FindDungeonsInRegionTask(int regionX, int regionZ, @NotNull MinecraftWorld world, @NotNull ConcurrentRTree<Spawner> spawnerTree) {
         this.regionX = regionX;
         this.regionZ = regionZ;
         this.world = world;
-        this.dungeonTree = dungeonTree;
+        this.spawnerTree = spawnerTree;
     }
 
     @Override
@@ -23,23 +26,28 @@ public class FindDungeonsInRegionTask implements Runnable {
 
         for(int chunkX = 0; chunkX < 32; chunkX++) {
             for(int chunkZ = 0; chunkZ < 32; chunkZ++) {
-                long globalChunkX = regionX * 32 + chunkX;
-                long globalChunkZ = regionZ * 32 + chunkZ;
-
                 MinecraftChunk chunk = region.getChunk(chunkX, chunkZ);
+                NBTCompound root = chunk.getRootTag();
+                if(root == null)
+                    continue;
 
-                for(int x = 0; x < 16; x++) {
-                    for(int z = 0; z < 16; z++) {
-                        for(int y = 0; y < 256; y++) {
-                            int id = chunk.getBlockID(x, y, z);
-                            if(id == BlockID.MOB_SPAWNER) {
-                                long globalX = globalChunkX * 16 + x;
-                                long globalZ = globalChunkZ * 16 + z;
+                NBTList tileEntities = (NBTList)chunk.getRootTag().getTag("Level.TileEntities");
+                for(NBTNamed entity : tileEntities.elements) {
+                    NBTCompound compoundEntity = (NBTCompound)entity;
 
-                                dungeonTree.add(new Point3d(globalX, y, globalZ));
-                            }
-                        }
-                    }
+                    String id = ((NBTString)compoundEntity.getTag("id")).getText();
+                    if(!id.equals("minecraft:mob_spawner"))
+                        continue;
+
+                    int x = ((NBTInt)compoundEntity.getTag("x")).getData();
+                    int y = ((NBTInt)compoundEntity.getTag("y")).getData();
+                    int z = ((NBTInt)compoundEntity.getTag("z")).getData();
+                    String mobId = ((NBTString)compoundEntity.getTag("SpawnData.id")).getText();
+                    mobId = mobId.replace("minecraft:", "");
+
+                    Point3d pos = new Point3d(x, y, z);
+                    MobType type = MobType.findById(mobId);
+                    spawnerTree.add(new Spawner(pos, type));
                 }
             }
         }
@@ -48,5 +56,5 @@ public class FindDungeonsInRegionTask implements Runnable {
 
     private final int regionX, regionZ;
     private final MinecraftWorld world;
-    private final ConcurrentRTree<Point3d> dungeonTree;
+    private final ConcurrentRTree<Spawner> spawnerTree;
 }

@@ -4,10 +4,10 @@ plugins {
 }
 
 group 'com.rayferric'
-version '1.1.0'
+version '1.2.1'
 
 compileJava {
-    sourceCompatibility = JavaVersion.VERSION_14
+    sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
 shadowJar {
@@ -25,8 +25,10 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
-    implementation group: 'com.conversantmedia', name: 'rtree', version: '1.0.5'
+    compileOnly 'org.jetbrains:annotations:20.1.0'
+
+    implementation 'commons-cli:commons-cli:1.4'
+    implementation 'com.conversantmedia:rtree:1.0.5'
 
     implementation 'com.github.Hugobros3:Enklume:bec416b92e42d9d2d661866f8758c0a1b432186d'
     implementation 'com.github.rayferric:jmath:54f9cba2e0004b3ca04d9fb44ed3557034b62845'

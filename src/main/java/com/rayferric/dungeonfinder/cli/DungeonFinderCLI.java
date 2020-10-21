@@ -1,8 +1,9 @@
 package com.rayferric.dungeonfinder.cli;
 
+import com.conversantmedia.util.collection.geometry.Point3d;
 import com.rayferric.dungeonfinder.DungeonConfiguration;
 import com.rayferric.dungeonfinder.DungeonFinder;
-import com.rayferric.dungeonfinder.util.BlockPos;
+import com.rayferric.dungeonfinder.Spawner;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -69,10 +70,12 @@ public class DungeonFinderCLI {
         int reportDelay = cmd.hasOption("report-delay") ? Integer.parseInt(cmd.getOptionValue("report-delay")) : 10000;
 
         DungeonFinder dungeonFinder = new DungeonFinder();
-        dungeonFinder.onStart(() -> System.out.printf(
-                "Processing %d regions on %d threads...\n", (maxX - minX + 1) * (maxZ - minZ + 1), numThreads));
+        dungeonFinder.onStart(() -> {
+            int numRegions = (maxX - minX + 1) * (maxZ - minZ + 1);
+            System.out.printf("Processing %s region%s on %s thread%s...\n", numRegions, numRegions == 1 ? "" : "s", numThreads, numThreads == 1 ? "" : "s");
+        });
         dungeonFinder.onFilter((numFound, timeElapsed) -> System.out.printf(
-                "Found %d dungeons. (%d s)\nStarted proximity filtering...\n", numFound, timeElapsed / 1000));
+                "Found %s dungeons. (%s s)\nStarted proximity filtering...\n", numFound, timeElapsed / 1000));
         dungeonFinder.onReport((numComplete, numTotal, timeElapsed) -> {
             double timeRemaining = 0;
             if(numComplete != 0)
@@ -81,7 +84,7 @@ public class DungeonFinderCLI {
 
             double progress = (double)numComplete / numTotal * 100.0;
 
-            System.out.printf("%d %% - ETA %s s\n", (long)progress, remainingTimeStr);
+            System.out.printf("%s %% - ETA %s s\n", (long)progress, remainingTimeStr);
         });
 
         List<DungeonConfiguration> dungeonConfigs = null;
@@ -94,13 +97,25 @@ public class DungeonFinderCLI {
             System.exit(1);
         }
 
-        System.out.printf("Found %d dungeon configuration%s with size of at least %d:\n", dungeonConfigs.size(),
-                dungeonConfigs.size() == 1 ? "" : "s", minConfigSize);
+
+        int numFound = dungeonConfigs.size();
+        System.out.printf("Found %s dungeon configuration%s with size of at least %s%s\n", numFound,
+                numFound == 1 ? "" : "s", minConfigSize, numFound == 0 ? "." : ":");
         for(DungeonConfiguration config : dungeonConfigs) {
-            BlockPos center = config.getCenter();
-            int spawnerCount = config.getDungeons().size();
-            System.out.printf("%d %d %d (%s spawner%s)\n", center.getX(), center.getY(), center.getZ(), spawnerCount,
-                    spawnerCount == 1 ? "" : "s");
+            List<Spawner> spawners = config.getSpawners();
+            Point3d center = config.getCenter();
+            long x = (long)Math.floor(center.getCoord(0));
+            long y = (long)Math.floor(center.getCoord(1));
+            long z = (long)Math.floor(center.getCoord(2));
+            int numSpawners = spawners.size();
+            System.out.printf("(%s, %s, %s) ", x, y, z);
+            for(int i = 0; i < numSpawners; i++) {
+                Spawner spawner = spawners.get(i);
+                if(i != 0)
+                    System.out.print(" + ");
+                System.out.print(spawner.getType().toString());
+            }
+            System.out.print('\n');
         }
     }
 
@@ -133,5 +148,5 @@ public class DungeonFinderCLI {
         }
     }
 
-    private final static String VERSION = "1.1.0";
+    private final static String VERSION = "1.2.1";
 }

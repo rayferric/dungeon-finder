@@ -30,7 +30,8 @@ public class FilterProximityTask implements Runnable {
         double x = pos.getCoord(0);
         double y = pos.getCoord(1);
         double z = pos.getCoord(2);
-        Rect3d searchRect = new Rect3d(x - maxDistOffset, y - maxDistOffset, z - maxDistOffset, x + maxDistOffset, y + maxDistOffset, z + maxDistOffset);
+        Rect3d searchRect = new Rect3d(x - maxDistOffset, y - maxDistOffset, z - maxDistOffset, x + maxDistOffset,
+                y + maxDistOffset, z + maxDistOffset);
 
         List<Spawner> spawners = new ArrayList<>();
         spawnerTree.search(searchRect, spawners);

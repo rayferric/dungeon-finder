@@ -3,7 +3,6 @@ package com.rayferric.dungeonfinder.task;
 import com.conversantmedia.util.collection.geometry.Point3d;
 import com.conversantmedia.util.collection.spatial.ConcurrentRTree;
 import com.rayferric.dungeonfinder.Spawner;
-import com.rayferric.dungeonfinder.util.BlockID;
 import com.rayferric.dungeonfinder.util.MobType;
 import io.xol.enklume.MinecraftChunk;
 import io.xol.enklume.MinecraftRegion;
@@ -12,7 +11,8 @@ import io.xol.enklume.nbt.*;
 import org.jetbrains.annotations.NotNull;
 
 public class FindDungeonsInRegionTask implements Runnable {
-    public FindDungeonsInRegionTask(int regionX, int regionZ, @NotNull MinecraftWorld world, @NotNull ConcurrentRTree<Spawner> spawnerTree) {
+    public FindDungeonsInRegionTask(int regionX, int regionZ, @NotNull MinecraftWorld world,
+                                    @NotNull ConcurrentRTree<Spawner> spawnerTree) {
         this.regionX = regionX;
         this.regionZ = regionZ;
         this.world = world;

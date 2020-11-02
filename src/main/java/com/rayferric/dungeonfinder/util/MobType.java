@@ -1,7 +1,6 @@
 package com.rayferric.dungeonfinder.util;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public enum MobType {
     NONE("none"),

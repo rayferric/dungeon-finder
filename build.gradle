@@ -32,7 +32,6 @@ dependencies {
     implementation 'com.conversantmedia:rtree:1.0.5'
 
     implementation 'com.github.Hugobros3:Enklume:bec416b92e42d9d2d661866f8758c0a1b432186d'
-    implementation 'com.github.rayferric:jmath:54f9cba2e0004b3ca04d9fb44ed3557034b62845'
 }
 
 task copyDependencies(type: Copy) {

@@ -1,6 +1,5 @@
 package com.rayferric.dungeonfinder;
 
-import com.conversantmedia.util.collection.geometry.Point3d;
 import com.conversantmedia.util.collection.spatial.ConcurrentRTree;
 import com.conversantmedia.util.collection.spatial.SpatialSearches;
 import com.rayferric.dungeonfinder.task.FilterProximityTask;
@@ -81,6 +80,7 @@ public class DungeonFinder {
      * @param maxDist        maximum distance from center of configuration to a single spawner
      * @param numThreads     number of threads used to process regions
      * @param reportDelay    delay between individual progress reports in milliseconds
+     *
      * @return list of dungeon configurations that were found
      */
     public List<DungeonConfiguration> run(String worldDirectory, int minX, int maxX, int minZ, int maxZ,

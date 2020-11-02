@@ -1,12 +1,15 @@
 package com.rayferric.dungeonfinder;
 
 import com.conversantmedia.util.collection.geometry.Point3d;
-import com.rayferric.math.common.Vector3f;
-import com.rayferric.math.welzl.Sphere;
-import com.rayferric.math.welzl.Welzl;
+import com.rayferric.dungeonfinder.welzl.Sphere;
+import com.rayferric.dungeonfinder.welzl.Vector3f;
+import com.rayferric.dungeonfinder.welzl.Welzl;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 
 public class DungeonConfiguration {
     public DungeonConfiguration(@NotNull List<Spawner> spawners, int maxDist) {
@@ -65,6 +68,7 @@ public class DungeonConfiguration {
      * Always returns the configuration with the most spawners.
      *
      * @param minDungeons minimum number of dungeons in a configuration
+     *
      * @return a valid configuration with the most spawners possible
      */
     public DungeonConfiguration getOptimalValidSubdivision(int minDungeons) {

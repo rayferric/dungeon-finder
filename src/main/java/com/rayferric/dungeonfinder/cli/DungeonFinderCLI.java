@@ -72,7 +72,8 @@ public class DungeonFinderCLI {
         DungeonFinder dungeonFinder = new DungeonFinder();
         dungeonFinder.onStart(() -> {
             int numRegions = (maxX - minX + 1) * (maxZ - minZ + 1);
-            System.out.printf("Processing %s region%s on %s thread%s...\n", numRegions, numRegions == 1 ? "" : "s", numThreads, numThreads == 1 ? "" : "s");
+            System.out.printf("Processing %s region%s on %s thread%s...\n", numRegions, numRegions == 1 ? "" : "s",
+                    numThreads, numThreads == 1 ? "" : "s");
         });
         dungeonFinder.onFilter((numFound, timeElapsed) -> System.out.printf(
                 "Found %s dungeons. (%s s)\nStarted proximity filtering...\n", numFound, timeElapsed / 1000));

@@ -149,5 +149,5 @@ public class DungeonFinderCLI {
         }
     }
 
-    private final static String VERSION = "1.2.1";
+    private final static String VERSION = "1.2.2";
 }

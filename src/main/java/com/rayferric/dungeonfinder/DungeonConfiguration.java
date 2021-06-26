@@ -6,10 +6,7 @@ import com.rayferric.dungeonfinder.welzl.Vector3f;
 import com.rayferric.dungeonfinder.welzl.Welzl;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class DungeonConfiguration {
     public DungeonConfiguration(@NotNull List<Spawner> spawners, int maxDist) {
@@ -45,20 +42,21 @@ public class DungeonConfiguration {
     }
 
     /**
-     * Subdivides this configuration into two children with one less spawner each.
+     * Subdivides this configuration into multiple children with one less spawner each.
      *
-     * @return list of two children configurations
+     * @return list of children configurations
      */
     public List<DungeonConfiguration> subdivide() {
-        List<DungeonConfiguration> subConfigs = new ArrayList<>(2);
+        if (spawners.size() == 1)
+            throw new IllegalStateException("Can't subdivide configuration with just one spawner.");
 
-        List<Spawner> newSpawners = new ArrayList<>(spawners);
-        newSpawners.remove(newSpawners.size() - 1);
-        subConfigs.add(new DungeonConfiguration(newSpawners, maxDist));
+        List<DungeonConfiguration> subConfigs = new ArrayList<>(spawners.size());
 
-        newSpawners = new ArrayList<>(spawners);
-        newSpawners.remove(0);
-        subConfigs.add(new DungeonConfiguration(newSpawners, maxDist));
+        for (int i = 0; i < spawners.size(); i++) {
+            List<Spawner> newSpawners = new ArrayList<>(spawners);
+            newSpawners.remove(i);
+            subConfigs.add(new DungeonConfiguration(newSpawners, maxDist));
+        }
 
         return subConfigs;
     }
@@ -72,22 +70,42 @@ public class DungeonConfiguration {
      * @return a valid configuration with the most spawners possible
      */
     public DungeonConfiguration getOptimalValidSubdivision(int minDungeons) {
-        if(valid)
-            return this;
-        if(spawners.size() <= minDungeons)
-            return null;
+//        if(valid)
+//            return this;
+//        if(spawners.size() <= minDungeons)
+//            return null;
+//
+//        List<DungeonConfiguration> subConfigs = subdivide();
+//
+//        DungeonConfiguration candidate = null;
+//        for(DungeonConfiguration subConfig : subConfigs) {
+//            DungeonConfiguration config = subConfig.getOptimalValidSubdivision(minDungeons);
+//            if(config == null) continue;
+//
+//            if(candidate == null || config.spawners.size() > candidate.spawners.size())
+//                candidate = config;
+//        }
+//        return candidate;
 
-        List<DungeonConfiguration> subConfigs = subdivide();
+        // Do a breadth-first search instead, simplifies
+        // logic a whole lot and makes an optimization too!
 
-        DungeonConfiguration candidate = null;
-        for(DungeonConfiguration subConfig : subConfigs) {
-            DungeonConfiguration config = subConfig.getOptimalValidSubdivision(minDungeons);
-            if(config == null) continue;
+        Queue<DungeonConfiguration> queue = new LinkedList<>();
+        queue.add(this);
 
-            if(candidate == null || config.spawners.size() > candidate.spawners.size())
-                candidate = config;
+        while (!queue.isEmpty()) {
+            DungeonConfiguration config = queue.poll();
+
+            if(config.spawners.size() < minDungeons)
+                return null;
+
+            if (config.valid)
+                return config;
+
+            queue.addAll(subdivide());
         }
-        return candidate;
+
+        return null;
     }
 
     /**

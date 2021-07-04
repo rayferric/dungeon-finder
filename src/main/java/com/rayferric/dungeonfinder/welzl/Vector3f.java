@@ -41,8 +41,8 @@ public class Vector3f {
 
     @Override
     public boolean equals(Object o) {
-        if(this == o) return true;
-        if(o == null || getClass() != o.getClass()) return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         Vector3f other = (Vector3f)o;
         return x == other.x && y == other.y && z == other.z;
     }

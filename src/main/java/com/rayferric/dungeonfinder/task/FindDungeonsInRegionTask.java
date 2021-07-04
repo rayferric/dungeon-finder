@@ -22,21 +22,21 @@ public class FindDungeonsInRegionTask implements Runnable {
     @Override
     public void run() {
         MinecraftRegion region = world.getRegion(regionX, regionZ);
-        if(region == null) return;
+        if (region == null) return;
 
-        for(int chunkX = 0; chunkX < 32; chunkX++) {
-            for(int chunkZ = 0; chunkZ < 32; chunkZ++) {
+        for (int chunkX = 0; chunkX < 32; chunkX++) {
+            for (int chunkZ = 0; chunkZ < 32; chunkZ++) {
                 MinecraftChunk chunk = region.getChunk(chunkX, chunkZ);
                 NBTCompound root = chunk.getRootTag();
-                if(root == null)
+                if (root == null)
                     continue;
 
                 NBTList tileEntities = (NBTList)chunk.getRootTag().getTag("Level.TileEntities");
-                for(NBTNamed entity : tileEntities.elements) {
+                for (NBTNamed entity : tileEntities.elements) {
                     NBTCompound compoundEntity = (NBTCompound)entity;
 
                     String id = ((NBTString)compoundEntity.getTag("id")).getText();
-                    if(!id.equals("minecraft:mob_spawner"))
+                    if (!id.equals("minecraft:mob_spawner"))
                         continue;
 
                     int x = ((NBTInt)compoundEntity.getTag("x")).getData();

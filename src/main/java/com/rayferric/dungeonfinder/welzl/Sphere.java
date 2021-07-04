@@ -10,8 +10,8 @@ public class Sphere {
 
     @Override
     public boolean equals(Object o) {
-        if(this == o) return true;
-        if(o == null || getClass() != o.getClass()) return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         Sphere other = (Sphere)o;
         return Objects.equals(origin, other.origin) && radius == other.radius;
     }
@@ -31,8 +31,8 @@ public class Sphere {
     }
 
     public boolean containsAll(Vector3f[] points) {
-        for(Vector3f point : points) {
-            if(!contains(point)) return false;
+        for (Vector3f point : points) {
+            if (!contains(point)) return false;
         }
         return true;
     }

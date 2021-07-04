@@ -42,8 +42,8 @@ public enum MobType {
     }
 
     public static MobType findById(@NotNull String id) {
-        for(MobType mob : values()) {
-            if(mob.id.equalsIgnoreCase(id))
+        for (MobType mob : values()) {
+            if (mob.id.equalsIgnoreCase(id))
                 return mob;
         }
         return NONE;

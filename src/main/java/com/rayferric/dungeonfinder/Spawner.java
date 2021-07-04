@@ -39,8 +39,8 @@ public class Spawner {
 
     @Override
     public boolean equals(Object o) {
-        if(this == o) return true;
-        if(o == null || getClass() != o.getClass()) return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         Spawner spawner = (Spawner)o;
         return Objects.equals(pos, spawner.pos) &&
                 type == spawner.type;

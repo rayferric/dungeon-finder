@@ -36,14 +36,14 @@ public class FilterProximityTask implements Runnable {
         List<Spawner> spawners = new ArrayList<>();
         spawnerTree.search(searchRect, spawners);
 
-        if(spawners.size() >= minConfigSize) { // Drop these here, so we don't have to cope with them later.
-            DungeonConfiguration config = new DungeonConfiguration(spawners, maxDist);
-            config = config.getOptimalValidSubdivision(minConfigSize);
-            if(config == null) return;
+        if (spawners.size() >= minConfigSize) { // Drop these here, so we don't have to cope with them later.
+            DungeonConfiguration config = new DungeonConfiguration(spawners);
+            config = config.getOptimalValidSubdivision(minConfigSize, maxDist);
+            if (config == null) return;
 
             try {
                 dungeonConfigsLock.lock();
-                if(!dungeonConfigs.contains(config))
+                if (!dungeonConfigs.contains(config))
                     dungeonConfigs.add(config);
             } finally {
                 dungeonConfigsLock.unlock();

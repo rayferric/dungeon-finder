@@ -80,7 +80,6 @@ public class DungeonFinder {
      * @param maxDist        maximum distance from center of configuration to a single spawner
      * @param numThreads     number of threads used to process regions
      * @param reportDelay    delay between individual progress reports in milliseconds
-     *
      * @return list of dungeon configurations that were found
      */
     public List<DungeonConfiguration> run(String worldDirectory, int minX, int maxX, int minZ, int maxZ,
@@ -94,17 +93,17 @@ public class DungeonFinder {
         File worldFolder = new File(worldDirectory);
         MinecraftWorld world = new MinecraftWorld(worldFolder);
 
-        if(startCallback != null) startCallback.execute();
+        if (startCallback != null) startCallback.execute();
 
-        for(int regionX = minX; regionX <= maxX; regionX++) {
-            for(int regionZ = minZ; regionZ <= maxZ; regionZ++) {
+        for (int regionX = minX; regionX <= maxX; regionX++) {
+            for (int regionZ = minZ; regionZ <= maxZ; regionZ++) {
                 threadPool.execute(new FindDungeonsInRegionTask(regionX, regionZ, world, dungeonTree));
             }
         }
 
         long time = System.currentTimeMillis();
         monitorThreadPool(threadPool, reportDelay);
-        if(filterCallback != null)
+        if (filterCallback != null)
             filterCallback.execute(dungeonTree.getEntryCount(), System.currentTimeMillis() - time);
 
         List<DungeonConfiguration> dungeonConfigs = new ArrayList<>();
@@ -118,7 +117,7 @@ public class DungeonFinder {
         threadPool.shutdown();
         try {
             threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
             System.exit(1);
         }
@@ -136,15 +135,15 @@ public class DungeonFinder {
 
         try {
             Thread.sleep(reportDelay);
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        while((numComplete = threadPool.getCompletedTaskCount()) != numTotal) {
-            if(reportCallback != null) reportCallback.execute(numComplete, numTotal, timeElapsed);
+        while ((numComplete = threadPool.getCompletedTaskCount()) != numTotal) {
+            if (reportCallback != null) reportCallback.execute(numComplete, numTotal, timeElapsed);
 
             try {
                 Thread.sleep(reportDelay);
-            } catch(InterruptedException e) {
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             timeElapsed += reportDelay;

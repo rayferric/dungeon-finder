@@ -9,29 +9,25 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class DungeonConfiguration {
-    public DungeonConfiguration(@NotNull List<Spawner> spawners, int maxDist) {
+    public DungeonConfiguration(@NotNull List<Spawner> spawners) {
         this.spawners = spawners;
-        this.maxDist = maxDist;
 
         // We must sort the array, so two differently ordered configurations will remain equal
         spawners.sort(Comparator.comparingInt(Spawner::hashCode));
 
         List<Vector3f> points = new ArrayList<>(spawners.size());
-        for(Spawner spawner : spawners) {
+        for (Spawner spawner : spawners) {
             Point3d pos = spawner.getPos();
             points.add(new Vector3f(pos.getCoord(0), pos.getCoord(1), pos.getCoord(2)));
         }
-        Sphere boundingSphere = Welzl.run(points);
-        Vector3f origin = boundingSphere.getOrigin();
 
-        center = new Point3d(origin.getX(), origin.getY(), origin.getZ());
-        valid = (boundingSphere.getRadius() <= maxDist);
+        boundingSphere = Welzl.run(points);
     }
 
     @Override
     public boolean equals(Object o) {
-        if(this == o) return true;
-        if(o == null || getClass() != o.getClass()) return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         DungeonConfiguration other = (DungeonConfiguration)o;
         return Objects.equals(spawners, other.spawners);
     }
@@ -55,7 +51,7 @@ public class DungeonConfiguration {
         for (int i = 0; i < spawners.size(); i++) {
             List<Spawner> newSpawners = new ArrayList<>(spawners);
             newSpawners.remove(i);
-            subConfigs.add(new DungeonConfiguration(newSpawners, maxDist));
+            subConfigs.add(new DungeonConfiguration(newSpawners));
         }
 
         return subConfigs;
@@ -66,43 +62,22 @@ public class DungeonConfiguration {
      * Always returns the configuration with the most spawners.
      *
      * @param minDungeons minimum number of dungeons in a configuration
-     *
      * @return a valid configuration with the most spawners possible
      */
-    public DungeonConfiguration getOptimalValidSubdivision(int minDungeons) {
-//        if(valid)
-//            return this;
-//        if(spawners.size() <= minDungeons)
-//            return null;
-//
-//        List<DungeonConfiguration> subConfigs = subdivide();
-//
-//        DungeonConfiguration candidate = null;
-//        for(DungeonConfiguration subConfig : subConfigs) {
-//            DungeonConfiguration config = subConfig.getOptimalValidSubdivision(minDungeons);
-//            if(config == null) continue;
-//
-//            if(candidate == null || config.spawners.size() > candidate.spawners.size())
-//                candidate = config;
-//        }
-//        return candidate;
-
-        // Do a breadth-first search instead, simplifies
-        // logic a whole lot and makes an optimization too!
-
+    public DungeonConfiguration getOptimalValidSubdivision(int minDungeons, float maxDist) {
         Queue<DungeonConfiguration> queue = new LinkedList<>();
         queue.add(this);
 
         while (!queue.isEmpty()) {
             DungeonConfiguration config = queue.poll();
 
-            if(config.spawners.size() < minDungeons)
+            if (config.spawners.size() < minDungeons)
                 return null;
 
-            if (config.valid)
+            if (config.isValid(maxDist))
                 return config;
 
-            queue.addAll(subdivide());
+            queue.addAll(config.subdivide());
         }
 
         return null;
@@ -118,25 +93,21 @@ public class DungeonConfiguration {
     }
 
     /**
-     * Returns the center point of the configuration which is an optimal (if not required) place for the player to stand.
+     * Returns center of the configuration which is an optimal
+     * (if not required) place for the player to stand.
      *
-     * @return center of the configuration
+     * @return center position
      */
     public Point3d getCenter() {
-        return center;
+        Vector3f vec = boundingSphere.getOrigin();
+        return new Point3d(vec.getX(), vec.getY(), vec.getZ());
     }
 
-    /**
-     * Returns whether all the spawners are at most maxDist blocks away from the center.
-     *
-     * @return whether the configuration is valid
-     */
-    public boolean isValid() {
-        return valid;
+    public boolean isValid(float maxDist) {
+        return boundingSphere.getRadius() <= maxDist;
     }
+
 
     private final List<Spawner> spawners;
-    private final int maxDist;
-    private final Point3d center;
-    private final boolean valid;
+    private final Sphere boundingSphere;
 }

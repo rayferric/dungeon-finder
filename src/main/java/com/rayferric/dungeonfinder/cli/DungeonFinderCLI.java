@@ -4,9 +4,11 @@ import com.conversantmedia.util.collection.geometry.Point3d;
 import com.rayferric.dungeonfinder.DungeonConfiguration;
 import com.rayferric.dungeonfinder.DungeonFinder;
 import com.rayferric.dungeonfinder.Spawner;
+import com.rayferric.dungeonfinder.util.MobType;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DungeonFinderCLI {
@@ -27,7 +29,26 @@ public class DungeonFinderCLI {
         Option numThreadsOption = new Option("t", "num-threads", true,
                 "number of threads used to process regions (default: 8, keep in mind that processing speed heavily depends on drive performance, this exact value gives off best benchmark performance overall on an HDD, higher values may theoretically help on SSDs and faster drives)");
         Option reportDelayOption = new Option("r", "report-delay", true,
-                "delay between individual progress reports in milliseconds (default: 10000)");
+                "delay between individual progress reports in milliseconds (default: 1000)");
+        Option excludeMobsOption = new Option("m", "exclude-mobs", true,
+                "list of excluded mob types separated with a comma; excluded mobs will still appear in configurations larger than min-config-size (default: empty); mob types: ");
+
+        {
+            StringBuilder builder = new StringBuilder();
+            MobType[] types = MobType.values();
+            for (int i = 0; i < types.length; i++) {
+                MobType type = types[i];
+                if (type == MobType.NONE)
+                    continue;
+
+                builder.append(type);
+
+                if (i != types.length - 1)
+                    builder.append(", ");
+            }
+            excludeMobsOption.setDescription(excludeMobsOption
+                    .getDescription() + builder.toString());
+        }
 
         worldDirectoryOption.setRequired(true);
         minXOption.setRequired(true);
@@ -46,13 +67,14 @@ public class DungeonFinderCLI {
         options.addOption(maxDistOption);
         options.addOption(numThreadsOption);
         options.addOption(reportDelayOption);
+        options.addOption(excludeMobsOption);
 
         parseHelpAndVersionOptions(args.clone(), options);
 
         CommandLine cmd = null;
         try {
             cmd = (new DefaultParser()).parse(options, args);
-        } catch(ParseException e) {
+        } catch (ParseException e) {
             System.out.println(e.getMessage());
             (new HelpFormatter()).printHelp("dungeon-finder", options);
             System.exit(1);
@@ -67,7 +89,17 @@ public class DungeonFinderCLI {
                 cmd.hasOption("min-config-size") ? Integer.parseInt(cmd.getOptionValue("min-config-size")) : 3;
         int maxDist = cmd.hasOption("max-dist") ? Integer.parseInt(cmd.getOptionValue("max-dist")) : 16;
         int numThreads = cmd.hasOption("num-threads") ? Integer.parseInt(cmd.getOptionValue("num-threads")) : 8;
-        int reportDelay = cmd.hasOption("report-delay") ? Integer.parseInt(cmd.getOptionValue("report-delay")) : 10000;
+        int reportDelay = cmd.hasOption("report-delay") ? Integer.parseInt(cmd.getOptionValue("report-delay")) : 1000;
+
+        // May contain MobType.NONE, spawners wouldn't contain NONE anyway
+        List<MobType> excludedMobs = new ArrayList<>();
+        if (cmd.hasOption("exclude-mobs")) {
+            for (String typeId : cmd.getOptionValue("exclude-mobs").split(",")) {
+                MobType type = MobType.findById(typeId.trim());
+                if (!excludedMobs.contains(type))
+                    excludedMobs.add(type);
+            }
+        }
 
         DungeonFinder dungeonFinder = new DungeonFinder();
         dungeonFinder.onStart(() -> {
@@ -79,7 +111,7 @@ public class DungeonFinderCLI {
                 "Found %s dungeons. (%s s)\nStarted proximity filtering...\n", numFound, timeElapsed / 1000));
         dungeonFinder.onReport((numComplete, numTotal, timeElapsed) -> {
             double timeRemaining = 0;
-            if(numComplete != 0)
+            if (numComplete != 0)
                 timeRemaining = (double)(timeElapsed * numTotal / numComplete - timeElapsed) / 1000.0;
             String remainingTimeStr = numComplete == 0 ? "?" : Long.toString((long)timeRemaining);
 
@@ -92,30 +124,36 @@ public class DungeonFinderCLI {
         try {
             dungeonConfigs = dungeonFinder
                     .run(worldDirectory, minX, maxX, minZ, maxZ, minConfigSize, maxDist, numThreads, reportDelay);
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.err.println("Failed to open world directory.");
             e.printStackTrace();
             System.exit(1);
         }
 
+        dungeonConfigs.removeIf(config ->
+                config.getSpawners().stream().filter(spawner ->
+                        !excludedMobs.contains(spawner.getType())
+                ).count() < minConfigSize);
 
         int numFound = dungeonConfigs.size();
         System.out.printf("Found %s dungeon configuration%s with size of at least %s%s\n", numFound,
                 numFound == 1 ? "" : "s", minConfigSize, numFound == 0 ? "." : ":");
-        for(DungeonConfiguration config : dungeonConfigs) {
+        for (DungeonConfiguration config : dungeonConfigs) {
             List<Spawner> spawners = config.getSpawners();
+
             Point3d center = config.getCenter();
             long x = (long)Math.floor(center.getCoord(0));
             long y = (long)Math.floor(center.getCoord(1));
             long z = (long)Math.floor(center.getCoord(2));
-            int numSpawners = spawners.size();
             System.out.printf("(%s, %s, %s) ", x, y, z);
-            for(int i = 0; i < numSpawners; i++) {
+
+            for (int i = 0; i < spawners.size(); i++) {
                 Spawner spawner = spawners.get(i);
-                if(i != 0)
+                if (i != 0)
                     System.out.print(" + ");
                 System.out.print(spawner.getType().toString());
             }
+
             System.out.print('\n');
         }
     }
@@ -123,7 +161,7 @@ public class DungeonFinderCLI {
     private static void parseHelpAndVersionOptions(String[] args, Options baseOptions) {
         Options options = new Options();
 
-        for(Option option : baseOptions.getOptions()) {
+        for (Option option : baseOptions.getOptions()) {
             Option opt = (Option)option.clone();
             opt.setRequired(false);
             options.addOption(opt);
@@ -132,18 +170,18 @@ public class DungeonFinderCLI {
         CommandLine cmd = null;
         try {
             cmd = (new DefaultParser()).parse(options, args);
-        } catch(ParseException e) {
+        } catch (ParseException e) {
             System.out.println(e.getMessage());
             (new HelpFormatter()).printHelp("dungeon-finder", options);
             System.exit(1);
         }
 
-        if(cmd.hasOption("help")) {
+        if (cmd.hasOption("help")) {
             (new HelpFormatter()).printHelp("dungeon-finder", options);
             System.exit(0);
         }
 
-        if(cmd.hasOption("version")) {
+        if (cmd.hasOption("version")) {
             System.out.printf("Dungeon Finder %s\n", VERSION);
             System.exit(0);
         }

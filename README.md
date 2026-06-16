@@ -18,10 +18,6 @@
 
 ## Getting Started
 
-### Installing
-
-- Download the latest **[Dungeon Finder binary](https://github.com/rayferric/dungeon-finder/releases)**.
-
 ## Development
 
 ### Prerequisites
@@ -91,6 +87,7 @@ Found 5 dungeon configurations with size of at least 2:
 ### Authors
 
 - Ray Ferric (**[rayferric](https://github.com/rayferric)**)
+- im-BowenGu (**[im-BowenGu](https://github.com/im-BowenGu)**)
 
 ### License
 

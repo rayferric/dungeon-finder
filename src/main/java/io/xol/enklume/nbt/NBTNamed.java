@@ -1,0 +1,40 @@
+package io.xol.enklume.nbt;
+
+import java.io.DataInputStream;
+import java.io.IOException;
+
+public class NBTNamed extends NBTag{
+
+	private String tagName;
+	boolean list = false;
+	
+	@Override
+	void feed(DataInputStream is) throws IOException {
+		if(!list)
+		{
+			int nameSize = 0;
+			nameSize += is.read() << 8;
+			nameSize += is.read();
+			byte[] n = new byte[nameSize];
+			try{
+				is.readFully(n);
+				tagName = new String(n, "UTF-8");
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public String getName()
+	{
+		return tagName;
+	}
+
+	public void setNamedFromListIndex(int i)
+	{
+		tagName = i+"";
+		list = true;
+	}
+}

@@ -3,7 +3,7 @@
 # Dungeon Finder
 
 👹 A command line tool that finds multi-dungeon configurations in a Minecraft world save.<br>
-⚠️ Won't work for Minecraft version 1.13 and later.
+⚠️ Only works for Minecraft 1.13 and later (tested up to 26.1.2). Maintained fork.
 
 [![](https://img.shields.io/github/license/rayferric/dungeon-finder?style=for-the-badge)](LICENSE)
 [![](https://img.shields.io/github/v/release/rayferric/dungeon-finder?style=for-the-badge)](https://github.com/rayferric/dungeon-finder/releases)
@@ -17,10 +17,6 @@
 - ⚙️ Custom Region Ranges
 
 ## Getting Started
-
-### Installing
-
-- Download the latest **[Dungeon Finder binary](https://github.com/rayferric/dungeon-finder/releases)**.
 
 ## Development
 
@@ -91,6 +87,7 @@ Found 5 dungeon configurations with size of at least 2:
 ### Authors
 
 - Ray Ferric (**[rayferric](https://github.com/rayferric)**)
+- im-BowenGu (**[im-BowenGu](https://github.com/im-BowenGu)**)
 
 ### License
 

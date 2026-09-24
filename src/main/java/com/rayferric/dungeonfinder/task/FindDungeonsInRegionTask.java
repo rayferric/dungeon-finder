@@ -31,7 +31,14 @@ public class FindDungeonsInRegionTask implements Runnable {
                 if (root == null)
                     continue;
 
-                NBTList tileEntities = (NBTList)chunk.getRootTag().getTag("Level.TileEntities");
+                // Try new format (1.18+): block_entities at root
+                NBTList tileEntities = (NBTList)root.getTag("block_entities");
+                // Fall back to old format (pre-1.18): Level.TileEntities
+                if (tileEntities == null)
+                    tileEntities = (NBTList)root.getTag("Level.TileEntities");
+                if (tileEntities == null)
+                    continue;
+
                 for (NBTNamed entity : tileEntities.elements) {
                     NBTCompound compoundEntity = (NBTCompound)entity;
 
@@ -42,7 +49,16 @@ public class FindDungeonsInRegionTask implements Runnable {
                     int x = ((NBTInt)compoundEntity.getTag("x")).getData();
                     int y = ((NBTInt)compoundEntity.getTag("y")).getData();
                     int z = ((NBTInt)compoundEntity.getTag("z")).getData();
-                    String mobId = ((NBTString)compoundEntity.getTag("SpawnData.id")).getText();
+
+                    // Try new format (1.21+): SpawnData.entity.id
+                    NBTString mobIdTag = (NBTString)compoundEntity.getTag("SpawnData.entity.id");
+                    // Fall back to old format: SpawnData.id
+                    if (mobIdTag == null)
+                        mobIdTag = (NBTString)compoundEntity.getTag("SpawnData.id");
+                    if (mobIdTag == null)
+                        continue;
+
+                    String mobId = mobIdTag.getText();
                     mobId = mobId.replace("minecraft:", "");
 
                     Point3d pos = new Point3d(x, y, z);

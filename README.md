@@ -2,8 +2,9 @@
 
 # Dungeon Finder
 
-👹 A command line tool that finds multi-dungeon configurations in a Minecraft world save.<br>
-⚠️ Only works for Minecraft 1.13 and later (tested up to 26.1.2). Maintained fork.
+👹 A command line tool that finds multi-dungeon configurations in a Minecraft world save.
+
+Works for all Minecraft versions from 1.8 through 26.1.2.
 
 [![](https://img.shields.io/github/license/rayferric/dungeon-finder?style=for-the-badge)](LICENSE)
 [![](https://img.shields.io/github/v/release/rayferric/dungeon-finder?style=for-the-badge)](https://github.com/rayferric/dungeon-finder/releases)

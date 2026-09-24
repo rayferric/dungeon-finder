@@ -42,8 +42,10 @@ public enum MobType {
     }
 
     public static MobType findById(@NotNull String id) {
+        String id_norm = id.replace("_", "").toLowerCase();
         for (MobType mob : values()) {
-            if (mob.id.equalsIgnoreCase(id))
+            String id_norm2 = mob.id.replace("_", "").toLowerCase();
+            if (id_norm.equals(id_norm2))
                 return mob;
         }
         return NONE;

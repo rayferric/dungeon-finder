@@ -43,7 +43,7 @@ public class FindDungeonsInRegionTask implements Runnable {
                     NBTCompound compoundEntity = (NBTCompound)entity;
 
                     String id = ((NBTString)compoundEntity.getTag("id")).getText();
-                    if (!id.equals("minecraft:mob_spawner"))
+                    if (!id.equals("minecraft:mob_spawner") && !id.equals("MobSpawner"))
                         continue;
 
                     int x = ((NBTInt)compoundEntity.getTag("x")).getData();
@@ -55,6 +55,8 @@ public class FindDungeonsInRegionTask implements Runnable {
                     // Fall back to old format: SpawnData.id
                     if (mobIdTag == null)
                         mobIdTag = (NBTString)compoundEntity.getTag("SpawnData.id");
+                    if (mobIdTag == null)
+                        mobIdTag = (NBTString)compoundEntity.getTag("EntityId");
                     if (mobIdTag == null)
                         continue;
 

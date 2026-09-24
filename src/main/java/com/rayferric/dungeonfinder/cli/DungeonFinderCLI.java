@@ -18,12 +18,12 @@ public class DungeonFinderCLI {
         Option helpOption = new Option("h", "help", false, "display help message");
         Option versionOption = new Option("v", "version", false, "print application name and version info");
         Option worldDirectoryOption = new Option("w", "world-directory", true, "path to the input world's directory");
-        Option minXOption = new Option(null, "min-x", true, "most negative region's X position");
-        Option maxXOption = new Option(null, "max-x", true, "most positive region's X position");
-        Option minZOption = new Option(null, "min-z", true, "most negative region's Z position");
-        Option maxZOption = new Option(null, "max-z", true, "most positive region's Z position");
+        Option minXOption = new Option(null, "min-x", true, "most negative region's X position (default: -1)");
+        Option maxXOption = new Option(null, "max-x", true, "most positive region's X position (default: 0)");
+        Option minZOption = new Option(null, "min-z", true, "most negative region's Z position (default: -1)");
+        Option maxZOption = new Option(null, "max-z", true, "most positive region's Z position (default: 0)");
         Option minConfigSizeOption = new Option("c", "min-config-size", true,
-                "minimum number of spawners per dungeon configuration (default: 3)");
+                "minimum number of spawners per dungeon configuration (default: 2)");
         Option maxDistOption = new Option("d", "max-dist", true,
                 "maximum distance from center of configuration to a single spawner (default: 16)");
         Option numThreadsOption = new Option("t", "num-threads", true,
@@ -51,10 +51,6 @@ public class DungeonFinderCLI {
         }
 
         worldDirectoryOption.setRequired(true);
-        minXOption.setRequired(true);
-        maxXOption.setRequired(true);
-        minZOption.setRequired(true);
-        maxZOption.setRequired(true);
 
         options.addOption(helpOption);
         options.addOption(versionOption);
@@ -76,17 +72,17 @@ public class DungeonFinderCLI {
             cmd = (new DefaultParser()).parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            (new HelpFormatter()).printHelp("dungeon-finder", options);
+            printHelp(options);
             System.exit(1);
         }
 
         String worldDirectory = cmd.getOptionValue("world-directory");
-        int minX = Integer.parseInt(cmd.getOptionValue("min-x"));
-        int maxX = Integer.parseInt(cmd.getOptionValue("max-x"));
-        int minZ = Integer.parseInt(cmd.getOptionValue("min-z"));
-        int maxZ = Integer.parseInt(cmd.getOptionValue("max-z"));
+        int minX = cmd.hasOption("min-x") ? Integer.parseInt(cmd.getOptionValue("min-x")) : -1;
+        int maxX = cmd.hasOption("max-x") ? Integer.parseInt(cmd.getOptionValue("max-x")) : 0;
+        int minZ = cmd.hasOption("min-z") ? Integer.parseInt(cmd.getOptionValue("min-z")) : -1;
+        int maxZ = cmd.hasOption("max-z") ? Integer.parseInt(cmd.getOptionValue("max-z")) : 0;
         int minConfigSize =
-                cmd.hasOption("min-config-size") ? Integer.parseInt(cmd.getOptionValue("min-config-size")) : 3;
+                cmd.hasOption("min-config-size") ? Integer.parseInt(cmd.getOptionValue("min-config-size")) : 2;
         int maxDist = cmd.hasOption("max-dist") ? Integer.parseInt(cmd.getOptionValue("max-dist")) : 16;
         int numThreads = cmd.hasOption("num-threads") ? Integer.parseInt(cmd.getOptionValue("num-threads")) : 8;
         int reportDelay = cmd.hasOption("report-delay") ? Integer.parseInt(cmd.getOptionValue("report-delay")) : 1000;
@@ -145,7 +141,7 @@ public class DungeonFinderCLI {
             long x = (long)Math.floor(center.getCoord(0));
             long y = (long)Math.floor(center.getCoord(1));
             long z = (long)Math.floor(center.getCoord(2));
-            System.out.printf("(%s, %s, %s) ", x, y, z);
+            System.out.printf("(%s %s %s) ", x, y, z);
 
             for (int i = 0; i < spawners.size(); i++) {
                 Spawner spawner = spawners.get(i);
@@ -172,12 +168,12 @@ public class DungeonFinderCLI {
             cmd = (new DefaultParser()).parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            (new HelpFormatter()).printHelp("dungeon-finder", options);
+            printHelp(options);
             System.exit(1);
         }
 
         if (cmd.hasOption("help")) {
-            (new HelpFormatter()).printHelp("dungeon-finder", options);
+            printHelp(options);
             System.exit(0);
         }
 
@@ -185,6 +181,12 @@ public class DungeonFinderCLI {
             System.out.printf("Dungeon Finder %s\n", VERSION);
             System.exit(0);
         }
+    }
+
+    private static void printHelp(Options options) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setOptionComparator(null);
+        formatter.printHelp("dungeon-finder -w [WORLD SAVE PATH]", options);
     }
 
     private final static String VERSION = "1.3.0";

@@ -189,5 +189,5 @@ public class DungeonFinderCLI {
         formatter.printHelp("dungeon-finder -w [WORLD SAVE PATH]", options);
     }
 
-    private final static String VERSION = "1.3.0";
+    private final static String VERSION = "1.4.0";
 }
